@@ -1,45 +1,58 @@
 // components/ChatBox.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 const ChatBox = ({ username, tree = {"홍익대학교" : {}},setTree }) => {
   const [message, setMessage] = useState("");
   const [chatLog, setChatLog] = useState([]);
+  const [socket, setSocket] = useState(null);
+
+  useEffect(() => {
+    const apiUrl = process.env.REACT_APP_API_URL; // 예: https://yourdomain.com
+    const wsProtocol = apiUrl.startsWith("https") ? "wss" : "ws";
+    const wsUrl = apiUrl.replace(/^https?/, wsProtocol) + "/ws"; // wss://yourdomain.com/ws
+
+    const ws = new WebSocket(wsUrl);  
+    setSocket(ws);
+
+    ws.onmessage = (event) => {
+      const received = JSON.parse(event.data);
+      setChatLog((prev) => [...prev, received]);
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, []);
 
   const handleSend = async () => {
     if (!message.trim()) return;
+    const userMessage = { role: "user", content: message, name: username };
 
     // 채팅 추가
     setChatLog((prev) => [
-      ...prev,
-      { role: "user", content: message, name: username }
+      ...prev, userMessage
     ]);
-    
+    socket?.send(JSON.stringify(userMessage)); // 🔄 다른 유저에게 전송
     try {
       const res = await fetch(`${process.env.REACT_APP_API_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message }),
       });
-      console.log(process.env.REACT_APP_API_URL)
       const data = await res.json();
       // 트리 갱신
-      console.log("🌳 기존 트리:", tree);
-      console.log("🌱 새 트리:", data.tree);
 
       if ((isTreeDifferent(tree, data.tree)) && !data.tree.value){
       // ✅ 트리가 진짜 바뀐 경우에만 메시지 출력
-        setChatLog((prev) => [
-        ...prev,
-        { role: "ai", content: "트리가 업데이트되었습니다." }
-      ]);
+      const aiMsg = { role: "ai", content: "트리가 업데이트되었습니다." };
+      setChatLog((prev) => [...prev, aiMsg]);
+      socket?.send(JSON.stringify(aiMsg));
       setTree(data.tree);
     }
     } catch (err) {
-      console.error("서버 오류:", err);
-      setChatLog((prev) => [
-        ...prev,
-        { role: "ai", content: "⚠️ 서버 오류가 발생했어요." },
-      ]);
+      const errMsg = { role: "ai", content: "⚠️ 서버 오류가 발생했어요." };
+      setChatLog((prev) => [...prev, errMsg]);
+      socket?.send(JSON.stringify(errMsg));
     }
 
     setMessage(""); // 입력창 비우기
