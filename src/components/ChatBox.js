@@ -38,6 +38,7 @@ const ChatBox = ({ username, tree = {"홍익대학교" : {}},setTree }) => {
     
     if (!message.trim()) return;
     const userMessage = { role: "user", content: message, name: username };
+    setChatLog((prev) => [...prev, userMsg]); // 사용자 입력도 출력
 
     // 채팅 추가
     socket?.send(JSON.stringify(userMessage)); // 🔄 다른 유저에게 전송
