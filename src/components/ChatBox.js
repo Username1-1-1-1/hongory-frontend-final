@@ -14,10 +14,15 @@ const ChatBox = ({ username, tree = {"홍익대학교" : {}},setTree }) => {
     };
 
     ws.onmessage = (event) => {
-      const received = JSON.parse(event.data);
-      console.log("📩 받은 메시지:", received);
-      setChatLog((prev) => [...prev, received]);
+      const data = JSON.parse(event.data);
+    
+      if (data.type === "tree_update") {
+        setTree(data.tree);  // 트리 갱신
+      } else {
+        setChatLog((prev) => [...prev, { sender: "🤖", message: data.response }]);
+      }
     };
+    
 
     return () => {
       ws.close();
@@ -33,6 +38,8 @@ const ChatBox = ({ username, tree = {"홍익대학교" : {}},setTree }) => {
     
     if (!message.trim()) return;
     const userMessage = { role: "user", content: message, name: username };
+
+    // 채팅 추가
     socket?.send(JSON.stringify(userMessage)); // 🔄 다른 유저에게 전송
     try {
       const res = await fetch(`${process.env.REACT_APP_API_URL}/chat`, {
@@ -53,7 +60,6 @@ const ChatBox = ({ username, tree = {"홍익대학교" : {}},setTree }) => {
     } catch (err) {
       const errMsg = { role: "ai", content: "⚠️ 서버 오류가 발생했어요." };
       setChatLog((prev) => [...prev, errMsg]);
-      socket?.send(JSON.stringify(errMsg));
     }
 
     setMessage(""); // 입력창 비우기
@@ -110,3 +116,4 @@ const deepEqual = (a, b) => {
   
   return true;
 };
+
