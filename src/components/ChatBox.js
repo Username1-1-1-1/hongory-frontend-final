@@ -5,9 +5,10 @@ const ChatBox = ({ username, tree = {"홍익대학교" : {}},setTree }) => {
   const [message, setMessage] = useState("");
   const [chatLog, setChatLog] = useState([]);
   const [socket, setSocket] = useState(null);
+  const [userCount, setUserCount] = useState(0);
 
   useEffect(() => {
-    const ws = new WebSocket("wss://hongory-backend.onrender.com/ws");  
+    const ws = new WebSocket(`wss://hongory-backend.onrender.com/ws?name=${username}`);
     ws.onopen = () => {
       console.log("✅ WebSocket 연결됨");
       setSocket(ws); // 여기서 비동기로 socket이 설정되므로 타이밍 중요
@@ -16,6 +17,14 @@ const ChatBox = ({ username, tree = {"홍익대학교" : {}},setTree }) => {
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
     
+      if (data.type === "user_count") {
+        setUserCount(data.count);
+      } else if (data.type === "tree_update") {
+        setTree(data.tree);
+      } else if (data.type === "chat") {
+        setChatLog((prev) => [...prev, { sender: data.name, message: data.message }]);
+      }
+
       if (data.type === "tree_update") {
         setTree(data.tree);
       } else if (data.type === "chat") {
@@ -51,6 +60,10 @@ const ChatBox = ({ username, tree = {"홍익대학교" : {}},setTree }) => {
 
   return (
     <div style={{ width: "300px", padding: "10px", height: "100%", display: "flex", flexDirection: "column" }}>
+      <div style={{ marginBottom: "10px", fontWeight: "bold" }}>
+          👥 현재 접속자 수: {userCount}명
+      </div>
+
       <div style={{ flexGrow: 1, overflowY: "auto", border: "1px solid #ccc", padding: "10px" }}>
         {chatLog.map((chat, idx) => (
           <div key={idx} style={{ marginBottom: "8px" }}>
@@ -100,5 +113,4 @@ const deepEqual = (a, b) => {
   
   return true;
 };
-
 
