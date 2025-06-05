@@ -21,18 +21,16 @@ const ChatBox = ({ username, tree = {"홍익대학교" : {}},setTree }) => {
         setUserCount(data.count);
       } else if (data.type === "tree_update") {
         setTree(data.tree);
-      } else if (data.type === "chat") {
-        setChatLog((prev) => [...prev, { sender: data.name, message: data.message }]);
       }
-
-      if (data.type === "tree_update") {
-        setTree(data.tree);
-      } else if (data.type === "chat") {
-        // 내 메시지가 아니라면 추가 (username으로 구분)
+      else if (data.type === "chat") {
+        // 내 메시지는 이미 보냈으니 안 넣음
         if (data.name !== username) {
-          setChatLog((prev) => [...prev, { role: "user", content: data.message, name: data.name }]);
+          setChatLog((prev) => [
+            ...prev,
+            { role: "user", content: data.message, name: data.name }
+          ]);
         }
-      }
+      }      
     };
     
 
@@ -65,14 +63,17 @@ const ChatBox = ({ username, tree = {"홍익대학교" : {}},setTree }) => {
       </div>
 
       <div style={{ flexGrow: 1, overflowY: "auto", border: "1px solid #ccc", padding: "10px" }}>
-        {chatLog.map((chat, idx) => (
-          <div key={idx} style={{ marginBottom: "8px" }}>
-            <strong>
-              {chat.role === "user" ? `${chat.name || "사용자"} : ` : "🤖 : "}
-            </strong>
-            <span>{chat.content}</span>
-          </div>
-        ))}
+      {chatLog.map((chat, idx) => (
+  chat.content?.trim() ? (
+    <div key={idx} style={{ marginBottom: "8px" }}>
+      <strong>
+        {chat.role === "user" ? `${chat.name || "사용자"} : ` : "🤖 : "}
+      </strong>
+      <span>{chat.content}</span>
+    </div>
+  ) : null
+))}
+
       </div>
       <div style={{ display: "flex", marginTop: "10px" }}>
         <input
