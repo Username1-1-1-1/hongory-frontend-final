@@ -33,11 +33,6 @@ const ChatBox = ({ username, tree = {"홍익대학교" : {}},setTree }) => {
     
     if (!message.trim()) return;
     const userMessage = { role: "user", content: message, name: username };
-
-    // 채팅 추가
-    setChatLog((prev) => [
-      ...prev, userMessage
-    ]);
     socket?.send(JSON.stringify(userMessage)); // 🔄 다른 유저에게 전송
     try {
       const res = await fetch(`${process.env.REACT_APP_API_URL}/chat`, {
