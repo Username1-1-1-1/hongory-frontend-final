@@ -17,9 +17,12 @@ const ChatBox = ({ username, tree = {"홍익대학교" : {}},setTree }) => {
       const data = JSON.parse(event.data);
     
       if (data.type === "tree_update") {
-        setTree(data.tree);  // 트리 갱신
-      } else {
-        setChatLog((prev) => [...prev, { sender: "🤖", message: data.response }]);
+        setTree(data.tree);
+      } else if (data.type === "chat") {
+        // 내 메시지가 아니라면 추가 (username으로 구분)
+        if (data.name !== username) {
+          setChatLog((prev) => [...prev, { role: "user", content: data.message, name: data.name }]);
+        }
       }
     };
     
@@ -30,39 +33,19 @@ const ChatBox = ({ username, tree = {"홍익대학교" : {}},setTree }) => {
   }, []);
 
   const handleSend = async () => {
-    if (!socket || socket.readyState !== WebSocket.OPEN) {
-      console.warn("🚫 WebSocket이 아직 연결되지 않았습니다.");
-      return;
-    }
-    console.log("📤 WebSocket 메시지 전송:", message);
+    if (!socket || socket.readyState !== WebSocket.OPEN) return;
     
     if (!message.trim()) return;
+
     const userMessage = { role: "user", content: message, name: username };
-    setChatLog((prev) => [...prev, userMsg]); // 사용자 입력도 출력
 
-    // 채팅 추가
-    socket?.send(JSON.stringify(userMessage)); // 🔄 다른 유저에게 전송
-    try {
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
-      });
-      const data = await res.json();
-      // 트리 갱신
-
-      if ((isTreeDifferent(tree, data.tree)) && !data.tree.value){
-      // ✅ 트리가 진짜 바뀐 경우에만 메시지 출력
-      const aiMsg = { role: "ai", content: "트리가 업데이트되었습니다." };
-      setChatLog((prev) => [...prev, aiMsg]);
-      socket?.send(JSON.stringify(aiMsg));
-      setTree(data.tree);
-    }
-    } catch (err) {
-      const errMsg = { role: "ai", content: "⚠️ 서버 오류가 발생했어요." };
-      setChatLog((prev) => [...prev, errMsg]);
-    }
-
+    setChatLog((prev) => [...prev, userMessage]);
+      // 채팅 추가
+    socket.send(JSON.stringify({
+      type: "chat",
+      content: message,
+      name: username
+    }));    
     setMessage(""); // 입력창 비우기
   };
 
@@ -117,4 +100,5 @@ const deepEqual = (a, b) => {
   
   return true;
 };
+
 
