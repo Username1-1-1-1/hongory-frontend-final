@@ -7,15 +7,15 @@ const ChatBox = ({ username, tree = {"홍익대학교" : {}},setTree }) => {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    const apiUrl = process.env.REACT_APP_API_URL; // 예: https://yourdomain.com
-    const wsProtocol = apiUrl.startsWith("https") ? "wss" : "ws";
-    const wsUrl = apiUrl.replace(/^https?/, wsProtocol) + "/ws"; // wss://yourdomain.com/ws
-
-    const ws = new WebSocket(wsUrl);  
-    setSocket(ws);
+    const ws = new WebSocket("wss://hongory-backend.onrender.com/ws");  
+    ws.onopen = () => {
+      console.log("✅ WebSocket 연결됨");
+      setSocket(ws); // 여기서 비동기로 socket이 설정되므로 타이밍 중요
+    };
 
     ws.onmessage = (event) => {
       const received = JSON.parse(event.data);
+      console.log("📩 받은 메시지:", received);
       setChatLog((prev) => [...prev, received]);
     };
 
@@ -25,6 +25,12 @@ const ChatBox = ({ username, tree = {"홍익대학교" : {}},setTree }) => {
   }, []);
 
   const handleSend = async () => {
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+      console.warn("🚫 WebSocket이 아직 연결되지 않았습니다.");
+      return;
+    }
+    console.log("📤 WebSocket 메시지 전송:", message);
+    
     if (!message.trim()) return;
     const userMessage = { role: "user", content: message, name: username };
 
