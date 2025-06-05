@@ -7,7 +7,7 @@ const ChatBox = ({ username, tree = {"홍익대학교" : {}},setTree }) => {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    const ws = new WebSocket("ws://hongory-backend.onrender.com/ws");  
+    const ws = new WebSocket("wss://hongory-backend.onrender.com/ws");  
     ws.onopen = () => {
       console.log("✅ WebSocket 연결됨");
       setSocket(ws); // 여기서 비동기로 socket이 설정되므로 타이밍 중요
