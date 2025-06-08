@@ -24,12 +24,10 @@ const ChatBox = ({ username, tree = {"홍익대학교" : {}},setTree }) => {
       }
       else if (data.type === "chat") {
         // 내 메시지는 이미 보냈으니 안 넣음
-        if (data.name !== username) {
-          setChatLog((prev) => [
-            ...prev,
-            { role: "user", content: data.message, name: data.name }
-          ]);
-        }
+        setChatLog((prev) => [
+          ...prev,
+          { role: "user", content: data.message, name: data.name }
+        ]);
       }      
     };
     const interval = setInterval(() => {
@@ -48,7 +46,7 @@ const ChatBox = ({ username, tree = {"홍익대학교" : {}},setTree }) => {
     if (!message.trim()) return;
 
     const userMessage = { role: "user", content: message, name: username };
-
+    
     setChatLog((prev) => [...prev, userMessage]);
       // 채팅 추가
     socket.send(JSON.stringify({
